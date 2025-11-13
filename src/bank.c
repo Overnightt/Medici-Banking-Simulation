@@ -1,7 +1,7 @@
 /* Implements the bank process */
-#include "bank.h"      
-#include "ipc.h"       
-#include "utils.h"    
+//#include "bank.h"      
+//#include "ipc.h"       
+//#include "utils.h"    
 #include <stdio.h>     
 #include <stdlib.h>    
 #include <string.h>   
@@ -23,8 +23,8 @@ int next_id = 1;
 //I decided to created a linked list to navigate between accounts
 typedef struct AccountList {
 	Account account;
-	struct AccountList* next
-}AccountList;
+	struct AccountList* next;
+} AccountList;
 
 // I start with an empty list of Accounts
 AccountList* head = NULL;
@@ -56,12 +56,21 @@ int add_account(int client_id,char name[50]){
 	next_id= next_id+1;
 	new_account->account.owner_id = client_id;
 	new_account->account.balance=0;
-	strncpy(new_account->account.account.account_name,name,50);
+	strncpy(new_account->account.account_name,name,50);
 	new_account->next=head;
 	head= new_account;
 	return 0;
 }
 
-int find_account(int account_id){
-	return 0;
+Account* find_account(int target_id){
+	AccountList* current=head;
+	while (current !=NULL){
+		if (current->account.account_id == target_id){
+			return &current->account;	
+		}
+		else{
+			current=current->next;
+		}
+	}
+	return NULL;
 }
