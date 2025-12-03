@@ -15,7 +15,7 @@
 void bank_process(){
 	printf("Welcome i'm the bank process i'll be running and processing request \n");
 	key_t key = ftok("bank", 1);
-        init_ipc(key, 1);
+    init_ipc(key, 1);
 	Request req;
 	Response rep;
 	while (1){
@@ -97,42 +97,58 @@ void bank_process(){
 void client_process(){
         key_t key = ftok("bank", 1);
         init_ipc(key, 0);
-	Client* cli = NULL;
+		Client* cli = NULL;
         Request req;
         Response rep;
+		int account_count = 0; //Track number of accounts
         while (cli==NULL){
-		printf("Welcome i'm the Client process please login \n");
-		printf("please enter your the id associated with your client space or enter -1 if you are new \n");
-		int acc_id;
-		scanf("%d", &acc_id);
-		if (acc_id==-1){
-			char acc_name[MAX_NAME];
-			printf("Please enter your name\n");
-			scanf(" %49[^\n]", acc_name);
-            		add_client(acc_name);
-			cli = &client_head->client;
-			acc_id = cli->client_id;
-			printf("Account created. Your client ID is %d\n", acc_id);
-		}
-		else {
-			cli=find_client(acc_id);
-			if (!cli) {
-                		printf("Client ID not found. Try again.\n");
-                		continue;
+			printf("\n\n=== Welcome i'm the Client process please login === \n\n");
+			printf("Please enter the id associated with your client space or enter -1 if you are new :\n");
+			int acc_id;
+			scanf("%d", &acc_id);
+			if (acc_id==-1){
+				char acc_name[MAX_NAME];
+				printf("\nPlease enter your name :\n");
+				scanf(" %49[^\n]", acc_name);
+				add_client(acc_name);
+				cli = &client_head->client;
+				acc_id = cli->client_id;
+				printf("-> Account created. Your client ID is %d \n", acc_id);
+			}
+			else {
+				cli=find_client(acc_id);
+				if (!cli) {
+							printf("Client ID not found. Try again.\n");
+							continue;
+				}
 			}
 		}
-	}
 	while (1) {
-		printf("Hello %s (ID: %d)\n", cli->client_name, cli->client_id);
-		printf("What do you want to do ? (D)eposit, (W)ithdraw, (T)ransfer, (A)dd account, (C)heck balance \n");
+		printf("\n\n=== Welcome %s (ID: %d) ===\n", cli->client_name, cli->client_id);
+		printf("\nWhat do you want to do ? ");
+		printf("\n(D)eposit"); 
+		printf("\n(W)ithdraw"); 
+		printf("\n(T)ransfer"); 
+		printf("\n(A)dd account"); 
+		printf("\n(C)heck balance");
+		printf("\nEnter your choice : ");	
 		char answ;
 		scanf(" %c",&answ);
+
+		// Verification: Ensure client has an account before allowing operations D, W, T, C
+        if ((answ=='D' || answ=='d' || answ=='W' || answ=='w' || 
+             answ=='T' || answ=='t' || answ=='C' || answ=='c') && account_count == 0) {
+            printf("\n-> Operation denied: You must create an account (A) first.\n");
+            continue;
+        }
+
+		//Handle the request
 		memset(&req, 0, sizeof(req));
 		if (answ=='D' || answ=='d'){
-			printf("Enter the id of the account where you want to deposit \n");
+			printf("Enter the id of the account where you want to deposit : \n");
 			int id;
 			scanf("%d",&id);
-			printf("Enter the amount to deposit \n");
+			printf("Enter the amount to deposit : \n");
 			int amt;
 			scanf("%d",&amt);
 			req.type=0;
@@ -142,59 +158,64 @@ void client_process(){
 			send_request(&req);
 		}
 		else if (answ=='W' || answ=='w'){
-			printf("Enter the id of the account where you want to withdraw \n");
-                        int id;
-                        scanf("%d",&id);
-                        printf("Enter the amount to withdraw \n");
-                        int amt;
-                        scanf("%d",&amt);
-	     		req.type=1;
-                        req.source_id=cli->client_id;
-                        req.target_id=id;
-                        req.amount=amt;
-                        send_request(&req);
-                }
+			printf("Enter the id of the account where you want to withdraw : \n");
+            int id;
+            scanf("%d",&id);
+            printf("Enter the amount to withdraw : \n");
+            int amt;
+            scanf("%d",&amt);
+	     	req.type=1;
+	     	req.source_id=cli->client_id;
+	     	req.target_id=id;
+	     	req.amount=amt;
+	     	send_request(&req);
+	    }
 		else if (answ=='T' || answ=='t'){
-			printf("Enter the id of the account where you want to take the money \n");
-                        int sid;
-                        scanf("%d",&sid);
-			printf("Enter the id of the account where you want to send the money \n");
-                        int did;
-                        scanf("%d",&did);
-                        printf("Enter the ammount of money to send \n");
-                        int amt;
-                        scanf("%d",&amt);
-                        req.type=2;
-                        req.source_id=cli->client_id;
-                        req.target_id=sid;
-			req.dest_id=did;
-                        req.amount=amt;
-                        send_request(&req);
-                }
+			printf("Enter the id of the account where you want to take the money : \n");
+            int sid;
+            scanf("%d",&sid);
+			printf("Enter the id of the account where you want to send the money : \n");
+            int did;
+            scanf("%d",&did);
+            printf("Enter the ammount of money to send : \n");
+            int amt;
+            scanf("%d",&amt);
+            req.type=2;
+            req.source_id=cli->client_id;
+            req.target_id=sid;
+            req.dest_id=did;
+            req.amount=amt;
+            send_request(&req);
+        }
 		else if (answ=='C' || answ=='c'){
-			printf("Enter the id of the account where you want to check the balance \n");
-                        int id;
-                        scanf("%d",&id);
-			req.type=3;
-                        req.source_id=cli->client_id;
-                        req.target_id=id;
-                        send_request(&req);
-                }
+			printf("Enter the id of the account where you want to check the balance : \n");
+            int id;
+            scanf("%d",&id);
+			req.type=3;		
+            req.source_id=cli->client_id;
+            req.target_id=id;
+            send_request(&req);
+        }
 		else if (answ=='A' || answ=='a'){
 			char acc_name[MAX_NAME];
-			printf("Enter the name of the account you want to create \n");
+			printf("Enter the name of the account you want to create : \n");
 			scanf(" %49[^\n]", acc_name);
-                        req.type=4;
+            req.type=4;
 			strncpy(req.name, acc_name, sizeof(req.name));
 			req.name[sizeof(req.name)-1] = '\0';
-                        req.source_id=cli->client_id;
-                        send_request(&req);
-                }
+            req.source_id=cli->client_id;
+            send_request(&req);
+    	}
 		else {
-			printf("invalid command \n");
+			printf("Invalid command \n");
 			continue;
 		}
 		receive_response(&rep,cli->client_id);
 		printf("Bank reply: %s", rep.message);
+
+		// Update local state if account creation was successful
+        if ((answ=='A' || answ=='a') && rep.status == 0) {
+            account_count++;
+        }
 	}
 }

@@ -87,9 +87,11 @@ int get_balance(int account_id){
 
 //The clients create a new account with this function 
 int add_account(int client_id,const char *name){
+	pthread_mutex_lock(&bank_mutex);
 	AccountList* new_account=(AccountList*) malloc(sizeof(AccountList));
 	if (new_account == NULL){
 		perror("Failled to malloc for new account");
+		pthread_mutex_unlock(&bank_mutex);
 		return -1;
 	}
 	new_account->account.account_id = next_id;
@@ -99,6 +101,7 @@ int add_account(int client_id,const char *name){
 	strncpy(new_account->account.account_name,name,50);
 	new_account->next=head;
 	head= new_account;
+	pthread_mutex_unlock(&bank_mutex);
 	return new_account->account.account_id;
 }
 

@@ -20,6 +20,6 @@ typedef struct ClientList {
 extern ClientList* client_head;
 
 int add_client(const char* name);
-Client* find_client(int client_it);
+Client* find_client(int client_id);
 #endif
 
