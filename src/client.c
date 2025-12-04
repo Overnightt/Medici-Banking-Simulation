@@ -11,10 +11,10 @@
 #include <semaphore.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 //I define the head of the linked list
 ClientList* client_head = NULL;
-
 
 
 //A function to create a new client
@@ -25,24 +25,27 @@ int add_client(const char* name){
                 exit(1);
         }
 
-        FILE* file = fopen("account.txt", "a+");
-        if (file == NULL) {
-            perror("Failed to open account.txt");
+        // Open (or create) a named semaphore to act as a mutex
+        sem_t *mutex = sem_open("/client_file_mutex", O_CREAT, 0644, 1);
+        if (mutex == SEM_FAILED) {
+            perror("Failed to open semaphore");
             free(new_client);
             exit(1);
         }
 
-        int fd = fileno(file);
-        struct flock lock;
-        memset(&lock, 0, sizeof(lock));
-        lock.l_type = F_WRLCK;
-        lock.l_whence = SEEK_SET;
-        lock.l_start = 0;
-        lock.l_len = 0;
+        // Lock the mutex
+        if (sem_wait(mutex) == -1) {
+            perror("Failed to lock semaphore");
+            sem_close(mutex);
+            free(new_client);
+            exit(1);
+        }
 
-        if (fcntl(fd, F_SETLKW, &lock) == -1) {
-            perror("Failed to lock account.txt");
-            fclose(file);
+        FILE* file = fopen("account.txt", "a+");
+        if (file == NULL) {
+            perror("Failed to open account.txt");
+            sem_post(mutex);
+            sem_close(mutex);
             free(new_client);
             exit(1);
         }
@@ -65,9 +68,13 @@ int add_client(const char* name){
         fprintf(file, "%d %s\n", new_id, name);
         fflush(file);
 
-        lock.l_type = F_UNLCK;
-        fcntl(fd, F_SETLK, &lock);
         fclose(file);
+
+        // Unlock the mutex
+        if (sem_post(mutex) == -1) {
+            perror("Failed to unlock semaphore");
+        }
+        sem_close(mutex);
 
         new_client->client.client_id = new_id;
         strncpy(new_client->client.client_name,name,50);
