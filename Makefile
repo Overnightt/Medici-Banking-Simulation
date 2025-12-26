@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Iinclude -Wall -Wextra -g -pthread
-SRCS = src/main.c src/bank.c src/client.c src/ipc.c src/ui.c src/utils.c
+SRCS = src/main.c src/bank.c src/client.c src/ipc.c src/ui.c
 OBJS = $(SRCS:.c=.o)
 TARGET = bank_simulation
 
